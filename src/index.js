@@ -11,7 +11,18 @@ app.use(express.json());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+
+  if (username === undefined)
+    return response.status(400).json({ error: 'Username header must be sent' });
+
+  const user = users.find(user => user.username === username);
+
+  if (!user)
+    return response.status(401).json({ error: 'Invalid credentials' });
+
+  request.user = user;
+  next();
 }
 
 app.post('/users', (request, response) => {
@@ -28,11 +39,16 @@ app.post('/users', (request, response) => {
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  return response.json(request.user.todos)
 });
 
 app.post('/todos', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user, body: { title, deadline } } = request;
+
+  const todo = { id: uuidv4(), title, deadline: new Date(deadline), done: false };
+  user.todos.push(todo);
+
+  return response.status(201).json(todo);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
